@@ -10,28 +10,24 @@ import { Subscription } from 'rxjs';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit{
   title = 'nistantriTech-task';
 
   @ViewChild('tabGroup') tabGroup!: MatTabGroup;
 
-  private dateTimeSubscription!: Subscription;
-  private temperatureSubscription!: Subscription;
 
   addDataForm!: FormGroup
   maxDate: Date = new Date();
 
-  dateTimeArr: string[] = []
-  temperatureArr: number[] = []
 
 
   public barChartLegend = true;
   public barChartPlugins = [];
 
   public barChartData: ChartConfiguration<'bar'>['data'] = {
-    labels: this.dateTimeArr,
+    labels: this._dataService.dateTimeData,
     datasets: [
-      { data: [...this.temperatureArr] }
+      { data: [...this._dataService.temperatureData] }
     ]
   };
 
@@ -47,34 +43,12 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-
-    this._dataService.dateTimeData.subscribe((data: any) => {
-      console.log("Data of date", data)
-      this.dateTimeArr.push(data)
-      // this.updateChart();
-    })
-
-    this._dataService.temperatureData.subscribe((data: any) => {
-      console.log("Data of temperature", data)
-      this.temperatureArr.push(data)
-      // this.updateChart();
-    })
     
     this.createForm()
   }
 
-  ngOnDestroy(): void {
-    if (this.dateTimeSubscription) {
-      this.dateTimeSubscription.unsubscribe();
-    }
-    if (this.temperatureSubscription) {
-      this.temperatureSubscription.unsubscribe();
-    }
-  }
-
   tabChange(event: any){
     this.updateChart();
-
   }
 
   
@@ -88,9 +62,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   updateChart(): void {
     this.barChartData = {
-      labels: [...this.dateTimeArr],
+      labels: [...this._dataService.dateTimeData],
       datasets: [
-        { data: [...this.temperatureArr], label: 'Temperature' }
+        { data: [...this._dataService.temperatureData], label: 'Temperature' }
       ]
     };
     this.cdr.detectChanges(); // Trigger change detection manually
@@ -105,17 +79,15 @@ export class AppComponent implements OnInit, OnDestroy {
     this.addDataForm.markAllAsTouched()
 
     if(this.addDataForm.valid){
-      console.log("this.temperatureArr", this.temperatureArr)
-      console.log("this.dateTimeArr", this.dateTimeArr)
+      
 
-      this._dataService.dateTimeData.next(this._dataService.formattedDateAndTime(this.addDataForm.value.dateTime))
-      this._dataService.temperatureData.next(this.addDataForm.value.temperature)
+      this._dataService.dateTimeData.push(this._dataService.formattedDateAndTime(this.addDataForm.value.dateTime))
+      this._dataService.temperatureData.push(this.addDataForm.value.temperature)
 
       this.addDataForm.reset()
       
       this.tabGroup.selectedIndex = 1;
 
-      // Reset form state
       this.addDataForm.markAsPristine();
       this.addDataForm.markAsUntouched();
     }
